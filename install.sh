@@ -24,9 +24,9 @@ if [ "$DRY_RUN" -ne 1 ]; then
 fi
 for command in apt-get curl dpkg dpkg-deb sha256sum unzip readelf; do require_command "$command"; done
 [ "$(dpkg --print-architecture)" = amd64 ] || die 'The Lenovo driver is amd64-only.'
-is_supported_os || die 'Only Kali and Debian-family systems are supported.'
+is_supported_os || die 'Only Kali Linux is supported by this installer.'
 usb_device_present || die "Fingerprint reader $TARGET_USB_ID was not detected."
-has_kali_time64_gusb || die 'Kali/Debian time64 package libgusb2a must be installed.'
+has_kali_time64_gusb || die 'Kali time64 package libgusb2a must be installed.'
 
 info "Detected $TARGET_USB_ID. Existing libfprint: $(installed_version libfprint-2-2)"
 info 'This installs a proprietary Goodix module into the authentication stack.'

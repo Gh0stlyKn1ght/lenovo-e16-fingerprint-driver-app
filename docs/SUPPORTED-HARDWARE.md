@@ -1,4 +1,4 @@
-# Supported hardware and distributions
+# Supported hardware
 
 Support is determined by the USB identifier, not only by the laptop model.
 Run `lsusb` and look for:
@@ -30,30 +30,19 @@ Readers such as `27c6:55a4` and `27c6:55b4` are not compatible with this driver.
 it is not a guarantee that this project has tested that laptop, distribution,
 firmware revision, suspend behavior, or desktop login stack.
 
-## Distribution status
+## Distribution support
 
 | Distribution | Status | Installation strategy |
 | --- | --- | --- |
 | Kali Rolling, amd64 | Supported and hardware-tested | Verified Ubuntu TOD packages adapted to Kali's `libgusb2a` transition |
-| Debian, amd64 | Experimental | Kali-compatible route; package transaction must pass the dry run |
-| Ubuntu 22.04, amd64 | Vendor-supported path planned | Use Ubuntu's native TOD packages; do not rewrite dependencies |
-| Ubuntu 24.04, amd64 | Planned | Separate release manifest and native TOD packages; needs hardware validation |
-| Ubuntu 20.04, amd64 | Lenovo legacy target | Upstream package supports it, but this project has not tested it |
+| Debian, Ubuntu, and derivatives | Out of scope | Use a distribution-specific project and native package strategy |
 | ARM64 or other architectures | Unsupported | Lenovo publishes this proprietary module for x86-64 only |
 
-The current installer is intentionally Kali/Debian-specific. Do not run it on
-Ubuntu yet: Ubuntu should use its native `libfprint-2-tod1` dependency path,
-whereas this installer currently requires and adapts for `libgusb2a`.
-
-Ubuntu support is practical without forking the project. The intended design is
-one GUI and one hardware detector with two package backends:
-
-1. Read `/etc/os-release`, architecture, and the exact USB identifier.
-2. On Kali/Debian, use the existing verified and ABI-checked adaptation.
-3. On supported Ubuntu releases, install the release-native TOD stack and the
-   hash-pinned Lenovo driver without changing package dependency metadata.
-4. Keep separate artifact hashes and CI checks for every supported release.
-5. Reject unknown releases instead of guessing which package set is compatible.
+This repository intentionally targets Kali Rolling only. Although Lenovo's
+upstream binary originated as an Ubuntu package, Ubuntu and Debian require
+their own release-specific dependency handling, testing, and recovery paths.
+Keeping those implementations separate prevents an untested package strategy
+from modifying an authentication stack.
 
 ## References
 

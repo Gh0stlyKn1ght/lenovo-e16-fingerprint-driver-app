@@ -60,8 +60,8 @@ is_supported_os() {
   [ -r /etc/os-release ] || return 1
   # shellcheck source=/dev/null
   . /etc/os-release
-  case "${ID:-}:${ID_LIKE:-}" in
-    kali:*|debian:*|*:debian*) return 0 ;;
+  case "${ID:-}" in
+    kali) return 0 ;;
     *) return 1 ;;
   esac
 }

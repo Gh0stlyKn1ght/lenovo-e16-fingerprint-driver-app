@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions are welcome for Debian-family compatibility, packaging, tests,
+Contributions are welcome for Kali compatibility, packaging, tests,
 and documentation. Do not commit proprietary Lenovo or Goodix binaries.
 
 Every artifact change must include its authoritative HTTPS source, SHA-256,

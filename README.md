@@ -2,9 +2,9 @@
 
 [![Shell tests](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/shell.yml/badge.svg)](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/shell.yml)
 
-A safety-oriented installer for the Goodix MOH fingerprint reader
+A safety-oriented Kali Linux installer for the Goodix MOH fingerprint reader
 `27c6:550a`. This project makes Lenovo's proprietary Ubuntu TOD driver usable
-on current Kali/Debian systems without redistributing the driver, and provides
+on current Kali systems without redistributing the driver, and provides
 a native GTK setup and recovery application.
 
 Created for and initially validated on Kali Linux by
@@ -54,7 +54,7 @@ This installer instead:
 
 ## How it works
 
-1. The preflight checks the exact USB ID, amd64 architecture, distribution,
+1. The preflight checks the exact USB ID, amd64 architecture, Kali environment,
    installed packages, and Kali's `libgusb2a` runtime.
 2. The installer downloads Lenovo's Goodix `0.0.9` TOD module and Canonical's
    TOD-enabled libfprint packages over HTTPS.

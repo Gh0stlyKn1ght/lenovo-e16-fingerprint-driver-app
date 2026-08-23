@@ -10,6 +10,7 @@ python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' || failed=1
 python3 -m py_compile "$ROOT/goodix_550a_gui.py" "$ROOT/lib/gui_backend.py" || failed=1
 
 grep -q '27c6:550a' "$ROOT/lib/common.sh"
+grep -q 'kali) return 0' "$ROOT/lib/common.sh"
 grep -q '860e21edc57cf1399e72e71fd41e0def7639cfe849826ebe4e0492112bc9d897' "$ROOT/manifests/releases.conf"
 grep -q 'pam-auth-update' "$ROOT/README.md"
 grep -q '/templates/' "$ROOT/.gitignore"

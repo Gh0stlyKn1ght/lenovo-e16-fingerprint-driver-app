@@ -25,6 +25,7 @@ This installer instead:
 - records package state and provides rollback;
 - pins the TOD stack against accidental partial upgrades;
 - verifies that fprintd sees the device;
+- disables runtime autosuspend for `27c6:550a` to prevent mid-enrollment stalls;
 - never enables fingerprint PAM automatically;
 - provides a native GUI without putting privileged package logic in the UI.
 
@@ -95,6 +96,12 @@ Restore distribution packages:
 
 ```sh
 sudo ./uninstall.sh
+```
+
+Repair an existing installation that stalls during enrollment:
+
+```sh
+sudo ./repair-power.sh
 ```
 
 Create a sanitized support report:

@@ -103,6 +103,7 @@ EOF
 
 udevadm control --reload-rules
 udevadm trigger --subsystem-match=usb --attr-match=idVendor=27c6 --attr-match=idProduct=550a || true
+"$ROOT/repair-power.sh"
 systemctl restart fprintd.service
 
 if ! timeout 15 fprintd-list "${SUDO_USER:-root}" > "$STATE_DIR/device-test.log" 2>&1; then

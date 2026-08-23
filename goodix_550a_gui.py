@@ -36,8 +36,11 @@ class GoodixWindow(Gtk.ApplicationWindow):
         self.set_border_width(0)
         self.user = current_user()
         self.busy = False
+        self.cancellable = False
+        self.process: subprocess.Popen[str] | None = None
         self.last_summary = ""
         self._build_ui()
+        self.connect("delete-event", self.on_window_delete)
         self.refresh_state()
         GLib.timeout_add_seconds(3, self.refresh_state)
 
@@ -108,8 +111,12 @@ class GoodixWindow(Gtk.ApplicationWindow):
         activity_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self.spinner = Gtk.Spinner()
         self.activity_label = Gtk.Label(label="Ready", xalign=0)
+        self.cancel_button = Gtk.Button(label="Cancel")
+        self.cancel_button.connect("clicked", self.on_cancel)
+        self.cancel_button.set_no_show_all(True)
         activity_box.pack_start(self.spinner, False, False, 0)
         activity_box.pack_start(self.activity_label, True, True, 0)
+        activity_box.pack_end(self.cancel_button, False, False, 0)
         outer.pack_start(activity_box, False, False, 0)
 
         log_frame = Gtk.Frame(label=" Activity log ")
@@ -193,6 +200,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
         self.verify_button.set_sensitive(not self.busy and ready)
         self.reset_button.set_sensitive(not self.busy and ready)
         self.diagnostic_button.set_sensitive(not self.busy)
+        self.cancel_button.set_visible(self.busy and self.cancellable)
+        self.cancel_button.set_sensitive(self.busy and self.cancellable)
 
     def confirm(self, title: str, detail: str, destructive: bool = False) -> bool:
         dialog = Gtk.MessageDialog(
@@ -208,7 +217,14 @@ class GoodixWindow(Gtk.ApplicationWindow):
         dialog.destroy()
         return response == Gtk.ResponseType.OK
 
-    def run_command(self, command: list[str], activity: str, done_message: str) -> None:
+    def run_command(
+        self,
+        command: list[str],
+        activity: str,
+        done_message: str,
+        cancellable: bool = False,
+    ) -> None:
+        self.cancellable = cancellable
         self.set_busy(True, activity)
         self.append_log(f"$ {' '.join(command)}")
 
@@ -222,6 +238,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
                     text=True,
                     bufsize=1,
                 )
+                self.process = process
                 assert process.stdout is not None
                 for line in process.stdout:
                     GLib.idle_add(self.append_log, line)
@@ -234,6 +251,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
         threading.Thread(target=worker, daemon=True).start()
 
     def _command_finished(self, returncode: int, done_message: str) -> bool:
+        self.process = None
+        self.cancellable = False
         if returncode == 0:
             self.append_log(done_message)
             self.set_busy(False, done_message)
@@ -242,6 +261,17 @@ class GoodixWindow(Gtk.ApplicationWindow):
             self.append_log(message)
             self.set_busy(False, message)
         self.refresh_state()
+        return False
+
+    def on_cancel(self, *_args) -> None:
+        if self.process is not None and self.process.poll() is None and self.cancellable:
+            self.append_log("Cancelling the current fingerprint operation…")
+            self.process.terminate()
+            self.cancel_button.set_sensitive(False)
+
+    def on_window_delete(self, *_args) -> bool:
+        if self.process is not None and self.process.poll() is None and self.cancellable:
+            self.process.terminate()
         return False
 
     def on_install(self, *_args) -> None:
@@ -276,6 +306,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
             ["fprintd-enroll", "-f", finger, self.user],
             "Touch and lift your finger when prompted…",
             "Fingerprint enrollment completed",
+            cancellable=True,
         )
 
     def on_verify(self, *_args) -> None:
@@ -283,6 +314,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
             ["fprintd-verify", self.user],
             "Touch the enrolled finger…",
             "Fingerprint verification completed",
+            cancellable=True,
         )
 
     def on_reset(self, *_args) -> None:

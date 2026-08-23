@@ -22,6 +22,15 @@ if usb_device_present; then
 else
   printf 'USB_ID=%s absent\n' "$TARGET_USB_ID"
 fi
+for control in /sys/bus/usb/devices/*/power/control; do
+  [ -r "$control" ] || continue
+  device=${control%/power/control}
+  [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
+  if [ "$(tr '[:upper:]' '[:lower:]' < "$device/idVendor")" = 27c6 ] \
+    && [ "$(tr '[:upper:]' '[:lower:]' < "$device/idProduct")" = 550a ]; then
+    printf 'power_control=%s\n' "$(cat "$control")"
+  fi
+done
 for field in sys_vendor product_name product_version; do
   if [ -r "/sys/class/dmi/id/$field" ]; then
     printf '%s=' "$field"

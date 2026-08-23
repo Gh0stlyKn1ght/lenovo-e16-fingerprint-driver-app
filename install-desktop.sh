@@ -50,10 +50,10 @@ for source in \
   goodix-550a-gui goodix_550a_gui.py install.sh uninstall.sh repair-power.sh \
   diagnose.sh preflight.sh lib/common.sh lib/gui_backend.py \
   manifests/releases.conf io.github.ghostlykn1ght.Goodix550a.desktop; do
-  [ -f "$ROOT/$source" ] && [ ! -L "$ROOT/$source" ] || {
+  if [ ! -f "$ROOT/$source" ] || [ -L "$ROOT/$source" ]; then
     printf 'Required source is missing or is a symbolic link: %s\n' "$source" >&2
     exit 1
-  }
+  fi
 done
 
 # Clear the previous bundle before copying so obsolete privileged files cannot

@@ -5,7 +5,7 @@ A safety-oriented installer for the Goodix MOH fingerprint reader
 on current Kali/Debian systems without redistributing the driver.
 
 Created for and initially validated on Kali Linux by
-[@ghostlykn1ght](https://github.com/ghostlykn1ght).
+[@Gh0stlyKn1ght](https://github.com/Gh0stlyKn1ght).
 
 ## Why this project exists
 
@@ -93,6 +93,6 @@ licenses. See `SECURITY.md` before using fingerprint authentication.
 ## Credits
 
 Project creation, Kali compatibility direction, and target-hardware validation:
-[@ghostlykn1ght](https://github.com/ghostlykn1ght).
+[@Gh0stlyKn1ght](https://github.com/Gh0stlyKn1ght).
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for upstream and community attribution.

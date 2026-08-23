@@ -2,7 +2,7 @@
 
 ## Project creation and Kali support
 
-- [@ghostlykn1ght](https://github.com/ghostlykn1ght) — project creator;
+- [@Gh0stlyKn1ght](https://github.com/Gh0stlyKn1ght) — project creator;
   initiated the effort to modernize Goodix `27c6:550a` support and contributed
   the target ThinkPad hardware, Kali compatibility direction, and validation.
 

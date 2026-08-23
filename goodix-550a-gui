@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT=$(readlink -f -- "$0")
+ROOT=$(CDPATH= cd -- "$(dirname -- "$SCRIPT")" && pwd)
 exec python3 "$ROOT/goodix_550a_gui.py" "$@"

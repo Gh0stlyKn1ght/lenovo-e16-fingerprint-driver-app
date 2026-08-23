@@ -4,6 +4,9 @@ A safety-oriented installer for the Goodix MOH fingerprint reader
 `27c6:550a`. This project makes Lenovo's proprietary Ubuntu TOD driver usable
 on current Kali/Debian systems without redistributing the driver.
 
+Created for and initially validated on Kali Linux by
+[@ghostlykn1ght](https://github.com/ghostlykn1ght).
+
 ## Why this project exists
 
 Upstream libfprint does not support this reader. Lenovo publishes a working
@@ -86,3 +89,10 @@ licenses. See `SECURITY.md` before using fingerprint authentication.
 - freedesktop.org libfprint
 - Ubuntu's TOD-enabled libfprint packages
 - `linux-fingerprint-drivers` device entry for `27c6:550a`
+
+## Credits
+
+Project creation, Kali compatibility direction, and target-hardware validation:
+[@ghostlykn1ght](https://github.com/ghostlykn1ght).
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for upstream and community attribution.

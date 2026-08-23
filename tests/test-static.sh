@@ -17,6 +17,9 @@ grep -q '/templates/' "$ROOT/.gitignore"
 grep -q '\*.fprint' "$ROOT/.gitignore"
 grep -q 'MODE="0600", GROUP="root"' "$ROOT/repair-power.sh"
 grep -q -- '--include-logs' "$ROOT/diagnose.sh"
+grep -q 'APP_DIR="/usr/libexec/goodix-550a"' "$ROOT/install-desktop.sh"
+grep -q 'install -o root -g root' "$ROOT/install-desktop.sh"
+grep -Eq '^Exec=(/usr/local/bin/)?goodix-550a-gui$' "$ROOT/io.github.ghostlykn1ght.Goodix550a.desktop"
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?pam-auth-update([[:space:]]|$)' "$ROOT/install.sh"; then
   printf 'The installer must not enable PAM automatically.\n' >&2
   failed=1

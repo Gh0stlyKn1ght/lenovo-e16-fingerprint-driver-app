@@ -52,8 +52,9 @@ Adding a Git remote does not upload anything; only an explicit push does.
 - The first source installation is executed from the checked-out repository.
   Inspect it immediately before authorizing `sudo` or PolicyKit, keep the
   checkout writable only by its owner, and do not run it from a shared folder.
-  A future packaged release should install privileged helpers as root-owned
-  files before the GUI is treated as a persistent system utility.
+  `sudo ./install-desktop.sh` then installs the persistent GUI and privileged
+  helpers below `/usr/libexec/goodix-550a` as `root:root`; the application menu
+  never launches privileged helpers from the checkout.
 - The foreign TOD stack requires periodic review against newer Canonical and
   Kali packages. Pinned versions reduce accidental ABI breakage but also mean
   security and maintenance updates are not inherited automatically.

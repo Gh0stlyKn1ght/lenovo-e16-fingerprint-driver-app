@@ -6,6 +6,8 @@ failed=0
 for file in "$ROOT"/*.sh "$ROOT"/lib/*.sh "$ROOT"/tests/*.sh; do
   bash -n "$file" || failed=1
 done
+python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' || failed=1
+python3 -m py_compile "$ROOT/goodix_550a_gui.py" "$ROOT/lib/gui_backend.py" || failed=1
 
 grep -q '27c6:550a' "$ROOT/lib/common.sh"
 grep -q '860e21edc57cf1399e72e71fd41e0def7639cfe849826ebe4e0492112bc9d897' "$ROOT/manifests/releases.conf"

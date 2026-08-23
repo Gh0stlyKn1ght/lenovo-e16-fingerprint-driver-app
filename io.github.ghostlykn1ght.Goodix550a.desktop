@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Goodix Fingerprint Setup
+Comment=Set up and troubleshoot the Goodix 27c6:550a fingerprint reader
+Exec=goodix-550a-gui
+Icon=preferences-system-privacy
+Terminal=false
+Categories=Settings;System;Security;
+Keywords=fingerprint;Goodix;biometric;login;
+StartupNotify=true

@@ -3,3 +3,5 @@ build/
 *.deb
 *.zip
 *.log
+__pycache__/
+*.pyc

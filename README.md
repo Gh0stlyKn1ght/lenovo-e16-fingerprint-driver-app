@@ -25,13 +25,43 @@ This installer instead:
 - records package state and provides rollback;
 - pins the TOD stack against accidental partial upgrades;
 - verifies that fprintd sees the device;
-- never enables fingerprint PAM automatically.
+- never enables fingerprint PAM automatically;
+- provides a native GUI without putting privileged package logic in the UI.
 
 ## Status
 
 Early hardware-validation release. The target ThinkPad E16 Gen 1 AMD detects
 the reader as `27c6:550a`; installation still requires an interactive hardware
 test. Keep password login enabled.
+
+## Desktop setup utility
+
+The native GTK utility shows live reader and driver status and provides guided
+actions for installation, enrollment, verification, resetting enrolled prints,
+diagnostics, and restoring Kali packages.
+
+Launch it from the repository:
+
+```sh
+./goodix-550a-gui
+```
+
+Add it to the current user's application menu:
+
+```sh
+./install-desktop.sh
+```
+
+Remove the application-menu entry with `./install-desktop.sh --remove`.
+
+The GUI uses the existing audited scripts for privileged operations. A normal
+PolicyKit authorization dialog appears when installing or restoring packages.
+Enrollment and verification run as the signed-in user. PAM configuration is
+never changed by the GUI.
+
+Current GUI requirements are Python 3, PyGObject, GTK 3, PolicyKit, and the
+standard `fprintd` command-line clients. These are present by default on the
+target Kali XFCE installation.
 
 ## Usage
 

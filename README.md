@@ -102,19 +102,26 @@ The native GTK utility shows live reader and driver status and provides guided
 actions for installation, enrollment, verification, resetting enrolled prints,
 diagnostics, and restoring Kali packages.
 
-Launch it from the repository:
+Launch it from the repository for development or inspection:
 
 ```sh
 ./goodix-550a-gui
 ```
 
-Add it to the current user's application menu:
+Install a root-owned copy and add it to the application menu:
 
 ```sh
-./install-desktop.sh
+sudo ./install-desktop.sh
 ```
 
-Remove the application-menu entry with `./install-desktop.sh --remove`.
+This copies the GUI and privileged helpers to `/usr/libexec/goodix-550a` and
+creates `/usr/local/bin/goodix-550a-gui`. PolicyKit therefore executes
+root-owned files instead of scripts in a writable Git checkout. The initial
+source installation remains a trust boundary: inspect the checkout immediately
+before authorizing it and never install from a shared writable directory.
+
+Remove the installed application with `sudo ./install-desktop.sh --remove`.
+This does not remove the driver or enrolled fingerprints.
 
 The GUI uses the existing audited scripts for privileged operations. A normal
 PolicyKit authorization dialog appears when installing or restoring packages.

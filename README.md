@@ -25,6 +25,11 @@ Validated on:
 This project intentionally rejects other USB product IDs. Similar-looking
 Goodix readers such as `27c6:55a4` and `27c6:55b4` use different protocols.
 
+Lenovo also ships different fingerprint modules in some configurations of the
+same laptop. See the tiered [hardware and distribution compatibility
+matrix](docs/SUPPORTED-HARDWARE.md); `27c6:550a` is always the authoritative
+check.
+
 ## Why this project exists
 
 Upstream libfprint does not support this reader. Lenovo publishes a working

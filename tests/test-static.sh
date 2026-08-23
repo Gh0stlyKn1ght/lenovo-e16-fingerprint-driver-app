@@ -12,6 +12,8 @@ python3 -m py_compile "$ROOT/goodix_550a_gui.py" "$ROOT/lib/gui_backend.py" || f
 grep -q '27c6:550a' "$ROOT/lib/common.sh"
 grep -q '860e21edc57cf1399e72e71fd41e0def7639cfe849826ebe4e0492112bc9d897' "$ROOT/manifests/releases.conf"
 grep -q 'pam-auth-update' "$ROOT/README.md"
+grep -q '/templates/' "$ROOT/.gitignore"
+grep -q '\*.fprint' "$ROOT/.gitignore"
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?pam-auth-update([[:space:]]|$)' "$ROOT/install.sh"; then
   printf 'The installer must not enable PAM automatically.\n' >&2
   failed=1

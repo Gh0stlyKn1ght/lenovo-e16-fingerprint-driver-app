@@ -5,3 +5,10 @@ build/
 *.log
 __pycache__/
 *.pyc
+
+# Never commit local support output or biometric research artifacts.
+/diagnostic.txt
+/goodix-550a-diagnostic*.txt
+/captures/
+/templates/
+*.fprint

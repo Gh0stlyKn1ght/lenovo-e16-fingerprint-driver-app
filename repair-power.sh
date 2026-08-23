@@ -13,6 +13,7 @@ cat > "$RULE_FILE" <<'EOF'
 # Goodix 27c6:550a can stall mid-enrollment when runtime autosuspend engages.
 # This late rule overrides both 60-autosuspend.rules and Lenovo's TOD rule.
 ACTION=="add|change", SUBSYSTEM=="usb", ATTR{idVendor}=="27c6", ATTR{idProduct}=="550a", TEST=="power/control", ATTR{power/control}="on", ENV{ID_AUTOSUSPEND}="0"
+ACTION=="add|change", SUBSYSTEM=="usb", ATTR{idVendor}=="27c6", ATTR{idProduct}=="550a", MODE="0600", GROUP="root"
 EOF
 chmod 0644 "$RULE_FILE"
 udevadm control --reload-rules

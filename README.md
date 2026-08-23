@@ -80,6 +80,8 @@ This installer instead:
 - `fprintd` is systemd-sandboxed with `NoNewPrivileges`, protected home and
   system paths, and address families restricted to local IPC and netlink. The
   loaded proprietary driver cannot open an Internet socket under this policy.
+- A late udev rule restricts raw access to this exact sensor to root-run
+  `fprintd`, preventing ordinary `plugdev` applications from bypassing it.
 - The installer only downloads reviewed Lenovo/Canonical artifacts and verifies
   pinned cryptographic hashes. It never uploads files.
 - PAM is never enabled automatically. Password authentication and recovery
@@ -186,7 +188,7 @@ Repair an existing installation that stalls during enrollment:
 sudo ./repair-power.sh
 ```
 
-Create a sanitized support report:
+Create a sanitized support report (service logs are omitted by default):
 
 ```sh
 ./diagnose.sh > diagnostic.txt
@@ -194,6 +196,9 @@ Create a sanitized support report:
 
 Review the report before attaching it to an issue. Never share enrolled
 templates, biometric captures, passwords, or USB serial numbers.
+
+For private troubleshooting only, `./diagnose.sh --include-logs` adds a
+redacted recent service log. It still requires manual review before sharing.
 
 ## Recovery
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 
@@ -25,7 +25,9 @@ fi
 for control in /sys/bus/usb/devices/*/power/control; do
   [ -r "$control" ] || continue
   device=${control%/power/control}
-  [ -r "$device/idVendor" ] && [ -r "$device/idProduct" ] || continue
+  if [ ! -r "$device/idVendor" ] || [ ! -r "$device/idProduct" ]; then
+    continue
+  fi
   if [ "$(tr '[:upper:]' '[:lower:]' < "$device/idVendor")" = 27c6 ] \
     && [ "$(tr '[:upper:]' '[:lower:]' < "$device/idProduct")" = 550a ]; then
     printf 'power_control=%s\n' "$(cat "$control")"

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 PROJECT_NAME="goodix-550a-kali"
+# These are consumed by scripts that source this library.
+# shellcheck disable=SC2034
 STATE_DIR="${GOODIX_STATE_DIR:-/var/lib/${PROJECT_NAME}}"
+# shellcheck disable=SC2034
 PIN_FILE="${GOODIX_PIN_FILE:-/etc/apt/preferences.d/${PROJECT_NAME}}"
 TARGET_USB_ID="27c6:550a"
 
@@ -19,7 +22,7 @@ require_root() {
 
 load_manifest() {
   local root=$1
-  # shellcheck source=../manifests/releases.conf
+  # shellcheck disable=SC1091
   . "$root/manifests/releases.conf"
 }
 

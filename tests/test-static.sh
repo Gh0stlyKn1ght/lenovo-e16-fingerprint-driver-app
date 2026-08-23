@@ -15,6 +15,8 @@ grep -q '860e21edc57cf1399e72e71fd41e0def7639cfe849826ebe4e0492112bc9d897' "$ROO
 grep -q 'pam-auth-update' "$ROOT/README.md"
 grep -q '/templates/' "$ROOT/.gitignore"
 grep -q '\*.fprint' "$ROOT/.gitignore"
+grep -q 'MODE="0600", GROUP="root"' "$ROOT/repair-power.sh"
+grep -q -- '--include-logs' "$ROOT/diagnose.sh"
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?pam-auth-update([[:space:]]|$)' "$ROOT/install.sh"; then
   printf 'The installer must not enable PAM automatically.\n' >&2
   failed=1

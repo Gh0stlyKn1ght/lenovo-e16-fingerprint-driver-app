@@ -5,6 +5,17 @@ ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 
+INCLUDE_LOGS=0
+case "${1:-}" in
+  '') ;;
+  --include-logs) INCLUDE_LOGS=1 ;;
+  -h|--help)
+    printf 'Usage: %s [--include-logs]\n' "$0"
+    exit 0 ;;
+  *) die "Unknown argument: $1" ;;
+esac
+[ "$#" -le 1 ] || die 'Too many arguments.'
+
 printf '%s\n' '# goodix-550a-kali diagnostic report'
 printf 'Generated: %s\n\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
@@ -48,12 +59,13 @@ done
 
 printf '\n%s\n' '## Service'
 systemctl is-active fprintd.service 2>&1 || true
-systemctl --no-pager --full status fprintd.service 2>&1 \
-  | grep -Ev '(^[[:space:]]*Serial:|[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5})' \
-  | tail -30 || true
 
-printf '\n%s\n' '## Recent fprintd log'
-journalctl -b -u fprintd.service --no-pager -n 80 2>&1 \
-  | grep -Ev '(serial|template|fingerprint data|[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5})' || true
+if [ "$INCLUDE_LOGS" -eq 1 ]; then
+  printf '\n%s\n' '## Recent fprintd log (manually review before sharing)'
+  journalctl -b -u fprintd.service --no-pager -n 80 2>&1 \
+    | grep -Eiv '(serial|template|fingerprint data|biometric|enroll|user(name)?|home/|[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5})' || true
+else
+  printf '%s\n' 'Recent logs omitted by default; use --include-logs only for private troubleshooting.'
+fi
 
 printf '\n%s\n' 'Do not attach enrolled templates or biometric captures.'

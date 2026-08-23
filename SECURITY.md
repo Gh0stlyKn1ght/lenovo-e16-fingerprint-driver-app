@@ -35,6 +35,8 @@ password and recovery path. The installer never enables PAM automatically.
 - Diagnostic reports, captures, templates, and `.fprint` files are ignored.
 - The installer performs HTTPS downloads only from reviewed Lenovo and
   Canonical locations and verifies pinned SHA-256 hashes before extraction.
+- A late, device-specific udev rule limits raw `27c6:550a` access to root-run
+  `fprintd` instead of granting desktop users direct sensor access.
 - The GUI has no network code. The installer downloads packages but never
   uploads files.
 - Issue templates explicitly prohibit attaching templates, captures,
@@ -42,3 +44,19 @@ password and recovery path. The installer never enables PAM automatically.
 
 Before publishing, inspect `git remote -v`, `git status`, and `git ls-files`.
 Adding a Git remote does not upload anything; only an explicit push does.
+
+## Residual trust and installation risk
+
+- Hash verification proves that an artifact matches the reviewed manifest; it
+  does not make the proprietary Goodix module auditable or harmless.
+- The first source installation is executed from the checked-out repository.
+  Inspect it immediately before authorizing `sudo` or PolicyKit, keep the
+  checkout writable only by its owner, and do not run it from a shared folder.
+  A future packaged release should install privileged helpers as root-owned
+  files before the GUI is treated as a persistent system utility.
+- The foreign TOD stack requires periodic review against newer Canonical and
+  Kali packages. Pinned versions reduce accidental ABI breakage but also mean
+  security and maintenance updates are not inherited automatically.
+- Lenovo's packaged udev rule grants `plugdev` access. This project's later
+  exact-device rule resets the node to `root:root` mode `0600`; removing the
+  project rule restores Lenovo's broader default.

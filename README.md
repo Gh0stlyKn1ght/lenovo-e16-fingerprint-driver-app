@@ -228,11 +228,25 @@ Run the local test suite:
 
 ```sh
 ./tests/test-static.sh
+./tests/test-package.sh
 ```
 
 CI performs shell syntax and policy tests, Python backend unit tests, Python
 compilation, and ShellCheck. The installer also has its own real-system
 `--dry-run` transaction check.
+
+## Building the application package
+
+Build the root-owned GUI package without bundling the proprietary driver:
+
+```sh
+./packaging/build-deb.sh 0.1.0~beta1
+sha256sum -c dist/lenovo-e16-fingerprint-driver-app_0.1.0~beta1_amd64.deb.sha256
+```
+
+The resulting package contains only this project's open-source application and
+installer helpers. Driver artifacts remain hash-verified downloads from Lenovo
+and Canonical at installation time.
 
 ## Licensing
 

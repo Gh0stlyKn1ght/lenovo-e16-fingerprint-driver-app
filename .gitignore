@@ -1,5 +1,6 @@
 artifacts/
 build/
+dist/
 *.deb
 *.zip
 *.log

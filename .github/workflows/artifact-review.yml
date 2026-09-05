@@ -9,6 +9,6 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Verify upstream hashes and freshness
         run: ./tests/check-artifacts.sh

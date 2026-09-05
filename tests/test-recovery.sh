@@ -58,7 +58,7 @@ test "$delete_line" -lt "$remove_line" || {
 fingerprint_store="$test_root/fprint"
 mkdir -p "$fingerprint_store/device/user"
 printf 'sensitive-template\n' > "$fingerprint_store/device/user/template"
-clear_fingerprint_data --test-directory "$fingerprint_store"
+clear_fingerprint_test_data "$fingerprint_store"
 test -d "$fingerprint_store"
 test -z "$(find "$fingerprint_store" -mindepth 1 -print -quit)"
 
@@ -99,6 +99,7 @@ grep -q '^apt-get remove ' "$keep_log"
 
 delete_log="$test_root/delete-fingerprints.log"
 (
+  # shellcheck disable=SC2317
   fprintd-delete() { :; }
   getent() {
     printf '%s\n' \
@@ -123,6 +124,7 @@ test "$stop_line" -lt "$clear_line"
 
 stop_failure_log="$test_root/stop-failure.log"
 if (
+  # shellcheck disable=SC2317
   command() { return 1; }
   systemctl() { return 1; }
   clear_fingerprint_data() { printf '%s\n' unsafe-clear >> "$stop_failure_log"; }
@@ -133,7 +135,7 @@ if (
 fi
 test ! -e "$stop_failure_log"
 
-if (clear_fingerprint_data --test-directory /tmp/not-a-goodix-recovery-root); then
+if (clear_fingerprint_test_data /tmp/not-a-goodix-recovery-root); then
   printf '%s\n' 'The test-only deletion override accepted an unsafe path.' >&2
   exit 1
 fi

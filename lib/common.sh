@@ -104,22 +104,25 @@ fprint_device_available() {
   printf '%s\n' "$output"
 }
 
-clear_fingerprint_data() {
-  local data_dir=/var/lib/fprint
-  if [ "$#" -ne 0 ]; then
-    if [ "$#" -ne 2 ] || [ "$1" != --test-directory ]; then
-      die 'A custom fingerprint data directory is permitted only for tests.'
-    fi
-    data_dir=$2
-    case "$data_dir" in
-      /tmp/goodix-550a-recovery-test.*/*) ;;
-      *) die 'Test fingerprint data directory is outside the isolated test root.' ;;
-    esac
-  fi
+_clear_fingerprint_data_directory() {
+  local data_dir=$1
   [ ! -L "$data_dir" ] \
     || die "Fingerprint data path must not be a symbolic link: $data_dir"
   [ -d "$data_dir" ] || return 0
   find "$data_dir" -xdev -mindepth 1 -delete
+}
+
+clear_fingerprint_data() {
+  _clear_fingerprint_data_directory /var/lib/fprint
+}
+
+clear_fingerprint_test_data() {
+  local data_dir=$1
+  case "$data_dir" in
+    /tmp/goodix-550a-recovery-test.*/*) ;;
+    *) die 'Test fingerprint data directory is outside the isolated test root.' ;;
+  esac
+  _clear_fingerprint_data_directory "$data_dir"
 }
 
 installed_version() {

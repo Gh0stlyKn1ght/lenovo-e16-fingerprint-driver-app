@@ -94,6 +94,12 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
+for state_path in "$STATE_DIR" "$STATE_DIR/packages"; do
+  if { [ -e "$state_path" ] || [ -L "$state_path" ]; } \
+    && { [ ! -d "$state_path" ] || [ -L "$state_path" ]; }; then
+    die "Installer state path must be a real directory: $state_path"
+  fi
+done
 install -d -o root -g root -m 0700 "$STATE_DIR" "$STATE_DIR/packages"
 chmod 0700 "$STATE_DIR"
 dpkg-query -W -f='${binary:Package}\t${Version}\n' > "$STATE_DIR/packages-before.tsv"

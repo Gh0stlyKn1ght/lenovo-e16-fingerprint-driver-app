@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 import pwd
+import stat
 import subprocess
 from typing import Callable
 
@@ -23,6 +24,16 @@ EXPECTED_TOD_VERSIONS = {
     "libfprint-2-tod1": "1:1.94.7+tod1-0ubuntu5~24.04.4",
     "libfprint-2-tod1-goodix": "0.0.9",
 }
+DRIVER_VERSION = EXPECTED_TOD_VERSIONS["libfprint-2-tod1-goodix"]
+RUNTIME_PATHS = (
+    Path("/usr/lib/x86_64-linux-gnu/libfprint-2"),
+    Path("/usr/lib/x86_64-linux-gnu/libfprint-2/tod-1"),
+    Path(
+        "/usr/lib/x86_64-linux-gnu/libfprint-2/tod-1/"
+        f"libfprint-tod-goodix-550a-{DRIVER_VERSION}.so"
+    ),
+    Path("/lib/udev/rules.d/60-libfprint-2-tod1-goodix.rules"),
+)
 
 
 @dataclass(frozen=True)
@@ -34,6 +45,7 @@ class SystemState:
     service_active: bool
     device_available: bool
     package_versions: dict[str, str]
+    runtime_paths_secure: bool
 
     @property
     def ready(self) -> bool:
@@ -43,6 +55,7 @@ class SystemState:
             and self.tod_installed
             and self.fprintd_installed
             and self.device_available
+            and self.runtime_paths_secure
             and all(
                 self.package_versions.get(package) == version
                 for package, version in EXPECTED_TOD_VERSIONS.items()
@@ -98,6 +111,28 @@ def service_active(
     return result.returncode == 0
 
 
+def runtime_paths_secure(
+    paths: tuple[Path, ...] = RUNTIME_PATHS,
+    expected_uid: int = 0,
+    expected_gid: int = 0,
+) -> bool:
+    """Reject missing, linked, non-root, or group/world-writable driver paths."""
+    for path in paths:
+        try:
+            metadata = path.lstat()
+        except (FileNotFoundError, PermissionError, OSError):
+            return False
+        if stat.S_ISLNK(metadata.st_mode):
+            return False
+        if not (stat.S_ISDIR(metadata.st_mode) or stat.S_ISREG(metadata.st_mode)):
+            return False
+        if metadata.st_uid != expected_uid or metadata.st_gid != expected_gid:
+            return False
+        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            return False
+    return True
+
+
 def device_available(
     user: str,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
@@ -125,6 +160,7 @@ def collect_state() -> SystemState:
         service_active=service_active(),
         device_available=device_available(current_user()),
         package_versions=versions,
+        runtime_paths_secure=runtime_paths_secure(),
     )
 
 
@@ -140,6 +176,8 @@ def state_summary(state: SystemState) -> str:
         for package, version in EXPECTED_TOD_VERSIONS.items()
     ):
         return "Fingerprint package versions are incompatible; repair the driver"
+    if not state.runtime_paths_secure:
+        return "Fingerprint driver permissions are unsafe; repair the driver"
     if not state.device_available:
         return "Fingerprint packages are installed, but fprintd cannot expose the reader"
     return "Fingerprint stack needs attention"

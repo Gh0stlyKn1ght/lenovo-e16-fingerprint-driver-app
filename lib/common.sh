@@ -7,6 +7,7 @@ STATE_DIR="${GOODIX_STATE_DIR:-/var/lib/${PROJECT_NAME}}"
 # shellcheck disable=SC2034
 PIN_FILE="${GOODIX_PIN_FILE:-/etc/apt/preferences.d/${PROJECT_NAME}}"
 TARGET_USB_ID="27c6:550a"
+MANAGED_PACKAGES=(libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix)
 
 info() { printf '[INFO] %s\n' "$*"; }
 warn() { printf '[WARN] %s\n' "$*" >&2; }
@@ -51,6 +52,56 @@ download_verified() {
     die "Checksum mismatch for $url (expected $expected, got $actual)."
   }
   mv "$output.part" "$output"
+}
+
+write_pin_file() {
+  local libfprint_version=$1 tod_version=$2 driver_version=$3 pin_dir pin_temp
+  pin_dir=$(dirname -- "$PIN_FILE")
+  [ ! -L "$PIN_FILE" ] || die "APT pin must not be a symbolic link: $PIN_FILE"
+  install -d -m 0755 "$pin_dir"
+  pin_temp=$(mktemp "$pin_dir/.${PROJECT_NAME}.XXXXXX")
+  if ! {
+    cat > "$pin_temp" <<EOF
+Package: libfprint-2-2
+Pin: version $libfprint_version
+Pin-Priority: 1001
+
+Package: libfprint-2-tod1
+Pin: version $tod_version
+Pin-Priority: 1001
+
+Package: libfprint-2-tod1-goodix
+Pin: version $driver_version
+Pin-Priority: 1001
+EOF
+    chmod 0644 "$pin_temp"
+    mv -fT -- "$pin_temp" "$PIN_FILE"
+  }; then
+    rm -f -- "$pin_temp"
+    return 1
+  fi
+}
+
+hold_installed_managed_packages() {
+  local package status
+  for package in "${MANAGED_PACKAGES[@]}"; do
+    status=$(dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null) || continue
+    case "$status" in
+      installed|unpacked|half-configured|half-installed|triggers-awaited|triggers-pending)
+        apt-mark hold "$package" >/dev/null \
+          || warn "Could not apply safety hold for $package." ;;
+    esac
+  done
+}
+
+fprint_device_available() {
+  local output
+  output=$(timeout 15 gdbus call --system \
+    --dest net.reactivated.Fprint \
+    --object-path /net/reactivated/Fprint/Manager \
+    --method net.reactivated.Fprint.Manager.GetDevices 2>/dev/null) || return 1
+  grep -q "objectpath '" <<< "$output" || return 1
+  printf '%s\n' "$output"
 }
 
 installed_version() {

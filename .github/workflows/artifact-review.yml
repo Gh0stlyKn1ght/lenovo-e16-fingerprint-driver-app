@@ -1,0 +1,14 @@
+name: artifact-review
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify upstream hashes and freshness
+        run: ./tests/check-artifacts.sh

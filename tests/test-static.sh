@@ -12,6 +12,7 @@ python3 -m py_compile "$ROOT/goodix_550a_gui.py" "$ROOT/lib/gui_backend.py" || f
 grep -q '27c6:550a' "$ROOT/lib/common.sh"
 grep -q 'kali) return 0' "$ROOT/lib/common.sh"
 grep -q '860e21edc57cf1399e72e71fd41e0def7639cfe849826ebe4e0492112bc9d897' "$ROOT/manifests/releases.conf"
+grep -q '86f21ff6306c20e64e180227982ceb732de5fe574deea92181d829a5cd5be189' "$ROOT/manifests/releases.conf"
 grep -q 'pam-auth-update' "$ROOT/README.md"
 grep -q '/templates/' "$ROOT/.gitignore"
 grep -q '\*.fprint' "$ROOT/.gitignore"
@@ -21,13 +22,21 @@ grep -q 'APP_DIR="/usr/libexec/goodix-550a"' "$ROOT/install-desktop.sh"
 grep -q 'install -o root -g root' "$ROOT/install-desktop.sh"
 test "$(grep -c -- '--build --root-owner-group' "$ROOT/install.sh")" -eq 3
 grep -q -- '--reinstall --allow-downgrades' "$ROOT/install.sh"
+grep -q -- '--allow-change-held-packages' "$ROOT/install.sh"
 grep -q 'apt-mark hold libfprint-2-2' "$ROOT/install.sh"
 grep -q 'chown root:root' "$ROOT/install.sh"
 grep -q 'chmod go-w' "$ROOT/install.sh"
 grep -q 'Installer state path must be a real directory' "$ROOT/install.sh"
 grep -q "trap 'rollback_on_error \$?' ERR" "$ROOT/uninstall.sh"
-grep -q 'restore_managed_holds' "$ROOT/uninstall.sh"
+grep -q 'hold_installed_managed_packages' "$ROOT/uninstall.sh"
 grep -q 'runtime_paths_secure' "$ROOT/lib/gui_backend.py"
+grep -q 'package_holds_active' "$ROOT/lib/gui_backend.py"
+grep -q 'pin_file_current' "$ROOT/lib/gui_backend.py"
+grep -q 'net.reactivated.Fprint.Manager.GetDevices' "$ROOT/lib/common.sh"
+if grep -q 'fprintd-list' "$ROOT/install.sh" "$ROOT/lib/gui_backend.py"; then
+  printf 'Enrollment listing must not be used for device discovery.\n' >&2
+  failed=1
+fi
 expected_user=$(id -un)
 actual_user=$(SUDO_USER='' PKEXEC_UID="$(id -u)" bash -c \
   '. "$1/lib/common.sh"; invoking_user' _ "$ROOT")

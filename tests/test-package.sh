@@ -14,9 +14,11 @@ if dpkg-deb -f "$package" Depends | grep -qw policykit-1; then
   printf 'Ubuntu-only policykit-1 dependency found in Kali package.\n' >&2
   exit 1
 fi
-dpkg-deb -c "$package" | grep -q './usr/libexec/goodix-550a/install.sh'
-dpkg-deb -c "$package" | grep -q './usr/bin/goodix-550a-gui'
-if dpkg-deb -c "$package" | grep -Eq '\.(deb|zip|fprint)$|/templates?/|/captures?/'; then
+package_listing="$output_dir/package-listing.txt"
+dpkg-deb -c "$package" > "$package_listing"
+grep -q './usr/libexec/goodix-550a/install.sh' "$package_listing"
+grep -q './usr/bin/goodix-550a-gui' "$package_listing"
+if grep -Eq '\.(deb|zip|fprint)$|/templates?/|/captures?/' "$package_listing"; then
   printf 'Forbidden artifact found in application package.\n' >&2
   exit 1
 fi

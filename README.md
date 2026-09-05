@@ -73,6 +73,17 @@ This installer instead:
 
 ## Security model
 
+### Encryption requirement
+
+The filesystem containing `/var/lib/fprint` and all swap devices **must be
+encrypted before enrolling a fingerprint**. LUKS full-disk encryption with
+encrypted swap satisfies this requirement. On an unencrypted system, an
+offline attacker may recover biometric templates or deleted-data remnants;
+file permissions and uninstall-time deletion do not prevent forensic recovery.
+
+The application documents but does not enforce this requirement. Users who
+choose to enroll without disk encryption explicitly accept that residual risk.
+
 - No fingerprint data, proprietary binary, diagnostic report, or hardware
   capture is stored in this repository.
 - The application has no telemetry and no upload functionality.
@@ -93,8 +104,8 @@ This installer instead:
 
 The Goodix module is proprietary and cannot be audited by this project.
 Fingerprint templates should be treated as sensitive and non-revocable. Use
-full-disk encryption to protect them against offline access, and use fingerprint
-authentication as a convenience factor rather than the only credential. Read
+fingerprint authentication as a convenience factor rather than the only
+credential. Read
 [SECURITY.md](SECURITY.md) for the full threat model.
 
 ## Desktop setup utility

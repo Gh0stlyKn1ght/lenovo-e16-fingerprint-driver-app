@@ -33,6 +33,8 @@ password and recovery path. The installer never enables PAM automatically.
 
 - Proprietary binaries and biometric artifacts are not stored in Git.
 - Diagnostic reports, captures, templates, and `.fprint` files are ignored.
+- Uninstall deletes enrolled templates before removing the working driver and
+  clears fprintd's local template store unless `--keep-fingerprints` is explicit.
 - The installer performs HTTPS downloads only from reviewed Lenovo and
   Canonical locations and verifies pinned SHA-256 hashes before extraction.
 - A weekly workflow re-downloads every artifact, verifies its hash, and checks

@@ -76,8 +76,8 @@ This installer instead:
 - No fingerprint data, proprietary binary, diagnostic report, or hardware
   capture is stored in this repository.
 - The application has no telemetry and no upload functionality.
-- Templates are stored locally below `/var/lib/fprint/<user>/`, protected by a
-  root-owned mode-`0700` state directory.
+- Templates are stored locally below `/var/lib/fprint/`, protected by a
+  mode-`0700` service state directory.
 - `fprintd` is systemd-sandboxed with `NoNewPrivileges`, protected home and
   system paths, and address families restricted to local IPC and netlink. The
   loaded proprietary driver cannot open an Internet socket under this policy.
@@ -190,6 +190,10 @@ Restore distribution packages:
 sudo ./uninstall.sh
 ```
 
+Uninstall deletes all locally enrolled fingerprint templates by default. For a
+temporary repair where retaining them is intentional, use
+`sudo ./uninstall.sh --keep-fingerprints`.
+
 Repair an existing installation that stalls during enrollment:
 
 ```sh
@@ -210,10 +214,11 @@ redacted recent service log. It still requires manual review before sharing.
 
 ## Recovery
 
-The GUI's **Restore Kali packages** action and `uninstall.sh` both remove the
-proprietary module, TOD package pin, and power override, then reinstall Kali's
-distribution versions of libfprint and fprintd. Enrolled templates are retained
-unless the user explicitly chooses **Reset enrolled prints**.
+The GUI's **Restore Kali packages** action and `uninstall.sh` both delete all
+enrolled templates, remove the proprietary module, TOD package pin, and power
+override, then reinstall Kali's distribution versions of libfprint and fprintd.
+The command-line-only `--keep-fingerprints` option must be given explicitly to
+retain templates during a temporary repair.
 
 Always retain working password access. If a graphical session fails, recovery
 can be run from a TTY:

@@ -46,3 +46,18 @@ grep -q "trap 'installation_failed 130' INT" "$ROOT/install.sh"
 grep -q "trap 'installation_failed 143' TERM HUP" "$ROOT/install.sh"
 grep -q "trap 'rollback_on_error 130' INT" "$ROOT/uninstall.sh"
 grep -q "trap 'rollback_on_error 143' TERM HUP" "$ROOT/uninstall.sh"
+delete_line=$(grep -n '^  delete_enrolled_fingerprints$' "$ROOT/uninstall.sh" | cut -d: -f1)
+remove_line=$(grep -n '^apt-get remove -y' "$ROOT/uninstall.sh" | cut -d: -f1)
+test "$delete_line" -lt "$remove_line" || {
+  printf 'Fingerprints must be deleted before the working driver is removed.\n' >&2
+  exit 1
+}
+
+fingerprint_store="$test_root/fprint"
+mkdir -p "$fingerprint_store/device/user"
+printf 'sensitive-template\n' > "$fingerprint_store/device/user/template"
+GOODIX_FPRINT_DATA_DIR="$fingerprint_store"
+FPRINT_DATA_DIR="$GOODIX_FPRINT_DATA_DIR"
+clear_fingerprint_data
+test -d "$fingerprint_store"
+test -z "$(find "$fingerprint_store" -mindepth 1 -print -quit)"

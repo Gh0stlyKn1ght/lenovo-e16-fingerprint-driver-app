@@ -24,7 +24,10 @@ grep -q -- '--reinstall --allow-downgrades' "$ROOT/install.sh"
 grep -q 'apt-mark hold libfprint-2-2' "$ROOT/install.sh"
 grep -q 'chown root:root' "$ROOT/install.sh"
 grep -q 'chmod go-w' "$ROOT/install.sh"
-grep -q "trap 'restore_previous_holds' ERR" "$ROOT/uninstall.sh"
+grep -q 'Installer state path must be a real directory' "$ROOT/install.sh"
+grep -q "trap 'rollback_on_error \$?' ERR" "$ROOT/uninstall.sh"
+grep -q 'restore_managed_holds' "$ROOT/uninstall.sh"
+grep -q 'runtime_paths_secure' "$ROOT/lib/gui_backend.py"
 grep -Eq '^Exec=(/usr/local/bin/)?goodix-550a-gui$' "$ROOT/io.github.ghostlykn1ght.Goodix550a.desktop"
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?pam-auth-update([[:space:]]|$)' "$ROOT/install.sh"; then
   printf 'The installer must not enable PAM automatically.\n' >&2

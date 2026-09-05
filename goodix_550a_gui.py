@@ -193,6 +193,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
         state = getattr(self, "state", None)
         ready = bool(state and state.ready)
         present = bool(state and state.reader_present)
+        installed = bool(state and (state.driver_installed or state.tod_installed))
         self.install_button.set_sensitive(not self.busy and present)
         self.rollback_button.set_sensitive(not self.busy and installed)
         self.enroll_button.set_sensitive(not self.busy and ready)

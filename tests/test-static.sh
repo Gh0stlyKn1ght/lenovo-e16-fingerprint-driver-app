@@ -32,6 +32,19 @@ grep -q 'hold_installed_managed_packages' "$ROOT/uninstall.sh"
 grep -q 'delete_enrolled_fingerprints' "$ROOT/uninstall.sh"
 grep -q -- '--keep-fingerprints' "$ROOT/uninstall.sh"
 grep -q 'clear_fingerprint_data' "$ROOT/uninstall.sh"
+if grep -R -E 'uses:[[:space:]]+[^[:space:]]+@' "$ROOT/.github/workflows" \
+  | grep -Ev '@[0-9a-f]{40}([[:space:]]|$)'; then
+  printf 'GitHub Actions must be pinned to immutable commit SHAs.\n' >&2
+  failed=1
+fi
+if grep -q 'GOODIX_FPRINT_DATA_DIR' "$ROOT/lib/common.sh" "$ROOT/uninstall.sh"; then
+  printf 'The production fingerprint deletion target must not be environment-controlled.\n' >&2
+  failed=1
+fi
+if grep -q -- '-lll' "$ROOT/.github/workflows/shell.yml"; then
+  printf 'Bandit must scan all severity levels.\n' >&2
+  failed=1
+fi
 grep -q 'runtime_paths_secure' "$ROOT/lib/gui_backend.py"
 grep -q 'package_holds_active' "$ROOT/lib/gui_backend.py"
 grep -q 'pin_file_current' "$ROOT/lib/gui_backend.py"

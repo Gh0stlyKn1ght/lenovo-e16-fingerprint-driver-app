@@ -7,6 +7,8 @@ trap 'rm -rf -- "$test_root"' EXIT
 
 # shellcheck disable=SC2034
 GOODIX_PIN_FILE="$test_root/preferences/goodix-550a-kali"
+# shellcheck disable=SC2034
+GOODIX_STATE_DIR="$test_root/state"
 # shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 
@@ -46,8 +48,8 @@ grep -q "trap 'installation_failed 130' INT" "$ROOT/install.sh"
 grep -q "trap 'installation_failed 143' TERM HUP" "$ROOT/install.sh"
 grep -q "trap 'rollback_on_error 130' INT" "$ROOT/uninstall.sh"
 grep -q "trap 'rollback_on_error 143' TERM HUP" "$ROOT/uninstall.sh"
-delete_line=$(grep -n '^  delete_enrolled_fingerprints$' "$ROOT/uninstall.sh" | cut -d: -f1)
-remove_line=$(grep -n '^apt-get remove -y' "$ROOT/uninstall.sh" | cut -d: -f1)
+delete_line=$(grep -n '^    delete_enrolled_fingerprints$' "$ROOT/uninstall.sh" | cut -d: -f1)
+remove_line=$(grep -n '^[[:space:]]*apt-get remove -y' "$ROOT/uninstall.sh" | cut -d: -f1)
 test "$delete_line" -lt "$remove_line" || {
   printf 'Fingerprints must be deleted before the working driver is removed.\n' >&2
   exit 1
@@ -56,8 +58,82 @@ test "$delete_line" -lt "$remove_line" || {
 fingerprint_store="$test_root/fprint"
 mkdir -p "$fingerprint_store/device/user"
 printf 'sensitive-template\n' > "$fingerprint_store/device/user/template"
-GOODIX_FPRINT_DATA_DIR="$fingerprint_store"
-FPRINT_DATA_DIR="$GOODIX_FPRINT_DATA_DIR"
-clear_fingerprint_data
+clear_fingerprint_data --test-directory "$fingerprint_store"
 test -d "$fingerprint_store"
 test -z "$(find "$fingerprint_store" -mindepth 1 -print -quit)"
+
+# Source the executable without running it, then exercise both complete control
+# flows with every privileged mutation replaced by an in-memory test double.
+# shellcheck source=uninstall.sh
+. "$ROOT/uninstall.sh"
+
+run_uninstall_case() (
+  local operation_log=$1
+  shift
+  require_root() { :; }
+  require_command() { :; }
+  delete_enrolled_fingerprints() { printf '%s\n' delete-fingerprints >> "$operation_log"; }
+  apt-mark() { printf 'apt-mark %s\n' "$*" >> "$operation_log"; }
+  apt-get() { printf 'apt-get %s\n' "$*" >> "$operation_log"; }
+  rm() { printf 'rm %s\n' "$*" >> "$operation_log"; }
+  udevadm() { printf 'udevadm %s\n' "$*" >> "$operation_log"; }
+  systemctl() { printf 'systemctl %s\n' "$*" >> "$operation_log"; }
+  restore_previous_holds() { printf '%s\n' restore-holds >> "$operation_log"; }
+  main "$@"
+)
+
+default_log="$test_root/default-uninstall.log"
+run_uninstall_case "$default_log"
+grep -qx delete-fingerprints "$default_log"
+default_delete_line=$(grep -n '^delete-fingerprints$' "$default_log" | cut -d: -f1)
+default_remove_line=$(grep -n '^apt-get remove ' "$default_log" | cut -d: -f1)
+test "$default_delete_line" -lt "$default_remove_line"
+
+keep_log="$test_root/keep-uninstall.log"
+run_uninstall_case "$keep_log" --keep-fingerprints
+if grep -q '^delete-fingerprints$' "$keep_log"; then
+  printf '%s\n' 'The explicit retention option unexpectedly deleted fingerprints.' >&2
+  exit 1
+fi
+grep -q '^apt-get remove ' "$keep_log"
+
+delete_log="$test_root/delete-fingerprints.log"
+(
+  fprintd-delete() { :; }
+  getent() {
+    printf '%s\n' \
+      'root:x:0:0:root:/root:/bin/bash' \
+      'daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin' \
+      'test-user:x:1000:1000:test:/home/test:/bin/bash'
+  }
+  timeout() { printf 'timeout %s\n' "$*" >> "$delete_log"; return 1; }
+  systemctl() { printf 'systemctl %s\n' "$*" >> "$delete_log"; }
+  clear_fingerprint_data() { printf '%s\n' clear-store >> "$delete_log"; }
+  delete_enrolled_fingerprints
+)
+grep -q '^timeout 15 fprintd-delete root$' "$delete_log"
+grep -q '^timeout 15 fprintd-delete test-user$' "$delete_log"
+if grep -q 'fprintd-delete daemon' "$delete_log"; then
+  printf '%s\n' 'A system account was unexpectedly sent for biometric deletion.' >&2
+  exit 1
+fi
+stop_line=$(grep -n '^systemctl stop fprintd.service$' "$delete_log" | cut -d: -f1)
+clear_line=$(grep -n '^clear-store$' "$delete_log" | cut -d: -f1)
+test "$stop_line" -lt "$clear_line"
+
+stop_failure_log="$test_root/stop-failure.log"
+if (
+  command() { return 1; }
+  systemctl() { return 1; }
+  clear_fingerprint_data() { printf '%s\n' unsafe-clear >> "$stop_failure_log"; }
+  delete_enrolled_fingerprints
+); then
+  printf '%s\n' 'Template deletion continued after fprintd failed to stop.' >&2
+  exit 1
+fi
+test ! -e "$stop_failure_log"
+
+if (clear_fingerprint_data --test-directory /tmp/not-a-goodix-recovery-root); then
+  printf '%s\n' 'The test-only deletion override accepted an unsafe path.' >&2
+  exit 1
+fi

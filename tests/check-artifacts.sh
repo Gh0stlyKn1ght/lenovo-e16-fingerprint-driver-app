@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-# shellcheck source=../lib/common.sh
+# shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 load_manifest "$ROOT"
 

@@ -5,8 +5,9 @@ ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 test_root=$(mktemp -d /tmp/goodix-550a-recovery-test.XXXXXX)
 trap 'rm -rf -- "$test_root"' EXIT
 
+# shellcheck disable=SC2034
 GOODIX_PIN_FILE="$test_root/preferences/goodix-550a-kali"
-# shellcheck source=../lib/common.sh
+# shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 
 write_pin_file '1:core-test' '1:tod-test' 'driver-test'

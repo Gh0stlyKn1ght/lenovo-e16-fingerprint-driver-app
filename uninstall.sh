@@ -21,7 +21,9 @@ fi
 apt-get install -y --reinstall libfprint-2-2 fprintd libpam-fprintd
 if [ -f "$STATE_DIR/holds-before.txt" ]; then
   while IFS= read -r package; do
-    [ -n "$package" ] && apt-mark hold "$package" >/dev/null
+    if [ -n "$package" ]; then
+      apt-mark hold "$package" >/dev/null
+    fi
   done < "$STATE_DIR/holds-before.txt"
 fi
 udevadm control --reload-rules

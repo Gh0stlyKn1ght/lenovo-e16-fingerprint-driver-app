@@ -96,8 +96,10 @@ install -d -o root -g root -m 0700 "$STATE_DIR" "$STATE_DIR/packages"
 chmod 0700 "$STATE_DIR"
 dpkg-query -W -f='${binary:Package}\t${Version}\n' > "$STATE_DIR/packages-before.tsv"
 cp "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" "$STATE_DIR/packages/"
-[ -e "$PIN_FILE" ] && cp -a "$PIN_FILE" "$STATE_DIR/preferences.backup" || true
-if [ -e "$PIN_FILE" ]; then chmod 0600 "$STATE_DIR/preferences.backup"; fi
+if [ -e "$PIN_FILE" ]; then
+  cp -a "$PIN_FILE" "$STATE_DIR/preferences.backup"
+  chmod 0600 "$STATE_DIR/preferences.backup"
+fi
 apt-mark showhold | grep -E '^(libfprint-2-2|libfprint-2-tod1|libfprint-2-tod1-goodix)$' > "$STATE_DIR/holds-before.txt" || true
 
 rollback_on_error() {

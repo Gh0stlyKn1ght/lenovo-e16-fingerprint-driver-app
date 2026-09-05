@@ -36,7 +36,9 @@ install -m 0755 \
   "$ROOT/diagnose.sh" "$ROOT/preflight.sh" "$app/"
 install -m 0644 "$ROOT/lib/common.sh" "$ROOT/lib/gui_backend.py" "$app/lib/"
 install -m 0644 "$ROOT/manifests/releases.conf" "$app/manifests/"
-install -m 0644 "$ROOT/README.md" "$ROOT/SECURITY.md" "$ROOT/LICENSE" \
+install -m 0644 \
+  "$ROOT/README.md" "$ROOT/SECURITY.md" "$ROOT/LICENSE" \
+  "$ROOT/THIRD_PARTY_NOTICES.md" "$ROOT/docs/FULL-DISCLOSURE.md" \
   "$stage/usr/share/doc/$PACKAGE/"
 
 ln -s ../libexec/goodix-550a/goodix-550a-gui "$stage/usr/bin/goodix-550a-gui"

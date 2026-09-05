@@ -18,6 +18,8 @@ fi
 package_listing="$output_dir/package-listing.txt"
 dpkg-deb -c "$package" > "$package_listing"
 grep -q './usr/libexec/goodix-550a/install.sh' "$package_listing"
+grep -q './usr/share/doc/lenovo-e16-fingerprint-driver-app/THIRD_PARTY_NOTICES.md' "$package_listing"
+grep -q './usr/share/doc/lenovo-e16-fingerprint-driver-app/FULL-DISCLOSURE.md' "$package_listing"
 grep -q './usr/bin/goodix-550a-gui' "$package_listing"
 if grep -Eq '\.(deb|zip|fprint)$|/templates?/|/captures?/' "$package_listing"; then
   printf 'Forbidden artifact found in application package.\n' >&2

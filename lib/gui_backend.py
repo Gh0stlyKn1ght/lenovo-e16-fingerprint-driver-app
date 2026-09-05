@@ -7,7 +7,8 @@ from pathlib import Path
 import os
 import pwd
 import stat
-import subprocess
+# Required for fixed-argv status probes; no commands use a shell.
+import subprocess  # nosec B404
 from typing import Callable
 
 USB_ID = "27c6:550a"

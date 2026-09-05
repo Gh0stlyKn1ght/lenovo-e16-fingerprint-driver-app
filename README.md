@@ -238,7 +238,8 @@ Run the local test suite:
 ```
 
 CI performs shell syntax and policy tests, recovery-safeguard tests, Python
-backend unit tests, Python compilation, Bandit scanning, and ShellCheck. A
+backend unit tests, Python compilation, all-severity Bandit scanning, and
+ShellCheck. A
 weekly job verifies upstream hashes and reports stale TOD artifacts. The installer also has its own real-system
 `--dry-run` transaction check.
 

@@ -6,7 +6,6 @@ PROJECT_NAME="goodix-550a-kali"
 STATE_DIR="${GOODIX_STATE_DIR:-/var/lib/${PROJECT_NAME}}"
 # shellcheck disable=SC2034
 PIN_FILE="${GOODIX_PIN_FILE:-/etc/apt/preferences.d/${PROJECT_NAME}}"
-FPRINT_DATA_DIR="${GOODIX_FPRINT_DATA_DIR:-/var/lib/fprint}"
 TARGET_USB_ID="27c6:550a"
 MANAGED_PACKAGES=(libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix)
 
@@ -105,11 +104,25 @@ fprint_device_available() {
   printf '%s\n' "$output"
 }
 
+_clear_fingerprint_data_directory() {
+  local data_dir=$1
+  [ ! -L "$data_dir" ] \
+    || die "Fingerprint data path must not be a symbolic link: $data_dir"
+  [ -d "$data_dir" ] || return 0
+  find "$data_dir" -xdev -mindepth 1 -delete
+}
+
 clear_fingerprint_data() {
-  [ ! -L "$FPRINT_DATA_DIR" ] \
-    || die "Fingerprint data path must not be a symbolic link: $FPRINT_DATA_DIR"
-  [ -d "$FPRINT_DATA_DIR" ] || return 0
-  find "$FPRINT_DATA_DIR" -xdev -mindepth 1 -delete
+  _clear_fingerprint_data_directory /var/lib/fprint
+}
+
+clear_fingerprint_test_data() {
+  local data_dir=$1
+  case "$data_dir" in
+    /tmp/goodix-550a-recovery-test.*/*) ;;
+    *) die 'Test fingerprint data directory is outside the isolated test root.' ;;
+  esac
+  _clear_fingerprint_data_directory "$data_dir"
 }
 
 installed_version() {

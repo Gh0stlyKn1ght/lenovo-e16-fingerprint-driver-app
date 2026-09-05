@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
-import subprocess
+# Required for fixed-argv helper execution; no commands use a shell.
+import subprocess  # nosec B404
 import sys
 import threading
 
@@ -230,7 +231,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
 
         def worker() -> None:
             try:
-                process = subprocess.Popen(
+                # Every caller supplies an internal fixed-argv list; shell=False.
+                process = subprocess.Popen(  # nosec B603
                     command,
                     cwd=ROOT,
                     stdout=subprocess.PIPE,
@@ -239,7 +241,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
                     bufsize=1,
                 )
                 self.process = process
-                assert process.stdout is not None
+                if process.stdout is None:
+                    raise RuntimeError("Could not capture helper output")
                 for line in process.stdout:
                     GLib.idle_add(self.append_log, line)
                 returncode = process.wait()
@@ -351,7 +354,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
         self.set_busy(True, "Creating diagnostic report…")
 
         def worker() -> None:
-            result = subprocess.run(
+            # The diagnostic path is a fixed root-owned application helper.
+            result = subprocess.run(  # nosec B603
                 [str(ROOT / "diagnose.sh")], text=True, capture_output=True, check=False
             )
             if result.returncode == 0:

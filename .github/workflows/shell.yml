@@ -1,14 +1,16 @@
 name: shell
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 permissions:
   contents: read
 jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck python3-bandit
       - name: Syntax and policy tests
@@ -20,4 +22,4 @@ jobs:
       - name: ShellCheck
         run: shellcheck --external-sources ./*.sh lib/*.sh tests/*.sh
       - name: Python security scan
-        run: bandit -q -lll -r goodix_550a_gui.py lib
+        run: bandit -q -r goodix_550a_gui.py lib

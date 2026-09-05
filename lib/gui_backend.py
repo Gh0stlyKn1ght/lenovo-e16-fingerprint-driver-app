@@ -18,6 +18,11 @@ PACKAGES = (
     "libpam-fprintd",
     "libgusb2a",
 )
+EXPECTED_TOD_VERSIONS = {
+    "libfprint-2-2": "1:1.94.9+tod1-1",
+    "libfprint-2-tod1": "1:1.94.7+tod1-0ubuntu5~24.04.4",
+    "libfprint-2-tod1-goodix": "0.0.9",
+}
 
 
 @dataclass(frozen=True)
@@ -27,6 +32,7 @@ class SystemState:
     tod_installed: bool
     fprintd_installed: bool
     service_active: bool
+    device_available: bool
     package_versions: dict[str, str]
 
     @property
@@ -36,6 +42,11 @@ class SystemState:
             and self.driver_installed
             and self.tod_installed
             and self.fprintd_installed
+            and self.device_available
+            and all(
+                self.package_versions.get(package) == version
+                for package, version in EXPECTED_TOD_VERSIONS.items()
+            )
         )
 
 
@@ -87,6 +98,23 @@ def service_active(
     return result.returncode == 0
 
 
+def device_available(
+    user: str,
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> bool:
+    try:
+        result = runner(
+            ["fprintd-list", user],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=5,
+        )
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def collect_state() -> SystemState:
     versions = package_versions()
     return SystemState(
@@ -95,6 +123,7 @@ def collect_state() -> SystemState:
         tod_installed="libfprint-2-tod1" in versions,
         fprintd_installed="fprintd" in versions,
         service_active=service_active(),
+        device_available=device_available(current_user()),
         package_versions=versions,
     )
 
@@ -106,4 +135,11 @@ def state_summary(state: SystemState) -> str:
         return "Reader and driver are ready"
     if not state.driver_installed:
         return "Reader detected; Goodix driver is not installed"
+    if any(
+        state.package_versions.get(package) != version
+        for package, version in EXPECTED_TOD_VERSIONS.items()
+    ):
+        return "Fingerprint package versions are incompatible; repair the driver"
+    if not state.device_available:
+        return "Fingerprint packages are installed, but fprintd cannot expose the reader"
     return "Fingerprint stack needs attention"

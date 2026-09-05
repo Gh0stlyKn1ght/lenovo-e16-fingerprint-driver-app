@@ -69,18 +69,20 @@ driver_deb="$workdir/driver-kali.deb"
 # expose libgusb.so.2; rewrite only the dependency metadata after confirming ABI.
 dpkg-deb -R "$workdir/downloads/tod.deb" "$workdir/repack/tod"
 sed -i 's/\blibusb2\b/libgusb2a/g; s/\blibgusb2\b/libgusb2a/g' "$workdir/repack/tod/DEBIAN/control"
-dpkg-deb -b "$workdir/repack/tod" "$workdir/tod-kali.deb" >/dev/null
+find "$workdir/repack/tod" \( -type f -o -type d \) -exec chmod go-w {} +
+dpkg-deb --build --root-owner-group "$workdir/repack/tod" "$workdir/tod-kali.deb" >/dev/null
 
 dpkg-deb -R "$workdir/downloads/libfprint.deb" "$workdir/repack/libfprint"
 sed -i 's/\blibusb2\b/libgusb2a/g; s/\blibgusb2\b/libgusb2a/g' "$workdir/repack/libfprint/DEBIAN/control"
-dpkg-deb -b "$workdir/repack/libfprint" "$workdir/libfprint-kali.deb" >/dev/null
+find "$workdir/repack/libfprint" \( -type f -o -type d \) -exec chmod go-w {} +
+dpkg-deb --build --root-owner-group "$workdir/repack/libfprint" "$workdir/libfprint-kali.deb" >/dev/null
 
 readelf -d "$workdir/repack/tod/usr/lib/x86_64-linux-gnu/libfprint-2-tod.so.1" | grep -q 'libgusb.so.2' \
   || die 'Unexpected TOD library ABI; refusing metadata rewrite.'
 grep -q 'libgusb.so.2' < <(ldconfig -p) || die 'libgusb runtime ABI is unavailable.'
 
 info 'Simulating package transaction.'
-apt-get -s install --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd > "$workdir/apt-simulation.log"
+apt-get -s install --reinstall --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd > "$workdir/apt-simulation.log"
 if grep -Eq '^(Remv|Conf) (login|libpam0g|systemd|sudo)\b' "$workdir/apt-simulation.log"; then
   cat "$workdir/apt-simulation.log"
   die 'APT simulation would alter a critical authentication package.'
@@ -96,17 +98,18 @@ install -d -o root -g root -m 0700 "$STATE_DIR" "$STATE_DIR/packages"
 chmod 0700 "$STATE_DIR"
 dpkg-query -W -f='${binary:Package}\t${Version}\n' > "$STATE_DIR/packages-before.tsv"
 cp "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" "$STATE_DIR/packages/"
-if [ -e "$PIN_FILE" ]; then
-  cp -a "$PIN_FILE" "$STATE_DIR/preferences.backup"
-  chmod 0600 "$STATE_DIR/preferences.backup"
+# PIN_FILE is project-specific and managed exclusively by this installer.
+# Remove backups created by older releases so uninstall cannot restore a stale pin.
+rm -f "$STATE_DIR/preferences.backup"
+if [ ! -f "$STATE_DIR/holds-before.txt" ]; then
+  apt-mark showhold | grep -E '^(libfprint-2-2|libfprint-2-tod1|libfprint-2-tod1-goodix)$' > "$STATE_DIR/holds-before.txt" || true
 fi
-apt-mark showhold | grep -E '^(libfprint-2-2|libfprint-2-tod1|libfprint-2-tod1-goodix)$' > "$STATE_DIR/holds-before.txt" || true
 
 rollback_on_error() {
   warn "Installation failed. Run $ROOT/uninstall.sh to restore the distribution packages."
 }
 trap 'rollback_on_error' ERR
-apt-get install -y --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd
+apt-get install -y --reinstall --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd
 
 cat > "$PIN_FILE" <<EOF
 Package: libfprint-2-2

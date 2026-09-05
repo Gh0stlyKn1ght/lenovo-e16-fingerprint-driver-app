@@ -111,6 +111,19 @@ rollback_on_error() {
 trap 'rollback_on_error' ERR
 apt-get install -y --reinstall --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd
 
+# dpkg does not always replace ownership on pre-existing shared directories.
+# Secure every path from which root-run fprintd loads the proprietary module.
+driver_root=/usr/lib/x86_64-linux-gnu/libfprint-2
+driver_dir="$driver_root/tod-1"
+driver_file="$driver_dir/libfprint-tod-goodix-550a-${LENOVO_VERSION}.so"
+driver_rule=/lib/udev/rules.d/60-libfprint-2-tod1-goodix.rules
+for path in "$driver_root" "$driver_dir" "$driver_file" "$driver_rule"; do
+  [ -e "$path" ] || die "Installed driver path is missing: $path"
+  [ ! -L "$path" ] || die "Installed driver path must not be a symbolic link: $path"
+  chown root:root "$path"
+  chmod go-w "$path"
+done
+
 cat > "$PIN_FILE" <<EOF
 Package: libfprint-2-2
 Pin: version $LIBFPRINT_VERSION

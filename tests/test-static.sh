@@ -22,6 +22,8 @@ grep -q 'install -o root -g root' "$ROOT/install-desktop.sh"
 test "$(grep -c -- '--build --root-owner-group' "$ROOT/install.sh")" -eq 3
 grep -q -- '--reinstall --allow-downgrades' "$ROOT/install.sh"
 grep -q 'apt-mark hold libfprint-2-2' "$ROOT/install.sh"
+grep -q 'chown root:root' "$ROOT/install.sh"
+grep -q 'chmod go-w' "$ROOT/install.sh"
 grep -q "trap 'restore_previous_holds' ERR" "$ROOT/uninstall.sh"
 grep -Eq '^Exec=(/usr/local/bin/)?goodix-550a-gui$' "$ROOT/io.github.ghostlykn1ght.Goodix550a.desktop"
 if grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?pam-auth-update([[:space:]]|$)' "$ROOT/install.sh"; then

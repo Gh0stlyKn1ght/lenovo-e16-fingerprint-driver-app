@@ -35,6 +35,8 @@ password and recovery path. The installer never enables PAM automatically.
 - Diagnostic reports, captures, templates, and `.fprint` files are ignored.
 - The installer performs HTTPS downloads only from reviewed Lenovo and
   Canonical locations and verifies pinned SHA-256 hashes before extraction.
+- A weekly workflow re-downloads every artifact, verifies its hash, and checks
+  the pinned TOD package against the current Ubuntu Noble update metadata.
 - A late, device-specific udev rule limits raw `27c6:550a` access to root-run
   `fprintd` instead of granting desktop users direct sensor access.
 - The GUI has no network code. The installer downloads packages but never

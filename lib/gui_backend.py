@@ -21,7 +21,7 @@ PACKAGES = (
 )
 EXPECTED_TOD_VERSIONS = {
     "libfprint-2-2": "1:1.94.9+tod1-1",
-    "libfprint-2-tod1": "1:1.94.7+tod1-0ubuntu5~24.04.4",
+    "libfprint-2-tod1": "1:1.94.7+tod1-0ubuntu5~24.04.9",
     "libfprint-2-tod1-goodix": "0.0.9",
 }
 DRIVER_VERSION = EXPECTED_TOD_VERSIONS["libfprint-2-tod1-goodix"]
@@ -34,6 +34,8 @@ RUNTIME_PATHS = (
     ),
     Path("/lib/udev/rules.d/60-libfprint-2-tod1-goodix.rules"),
 )
+PIN_FILE = Path("/etc/apt/preferences.d/goodix-550a-kali")
+MANAGED_PACKAGES = frozenset(EXPECTED_TOD_VERSIONS)
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,7 @@ class SystemState:
     device_available: bool
     package_versions: dict[str, str]
     runtime_paths_secure: bool
+    apt_protected: bool
 
     @property
     def ready(self) -> bool:
@@ -56,6 +59,7 @@ class SystemState:
             and self.fprintd_installed
             and self.device_available
             and self.runtime_paths_secure
+            and self.apt_protected
             and all(
                 self.package_versions.get(package) == version
                 for package, version in EXPECTED_TOD_VERSIONS.items()
@@ -134,12 +138,21 @@ def runtime_paths_secure(
 
 
 def device_available(
-    user: str,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> bool:
     try:
         result = runner(
-            ["fprintd-list", user],
+            [
+                "gdbus",
+                "call",
+                "--system",
+                "--dest",
+                "net.reactivated.Fprint",
+                "--object-path",
+                "/net/reactivated/Fprint/Manager",
+                "--method",
+                "net.reactivated.Fprint.Manager.GetDevices",
+            ],
             text=True,
             capture_output=True,
             check=False,
@@ -147,7 +160,53 @@ def device_available(
         )
     except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
         return False
-    return result.returncode == 0
+    return result.returncode == 0 and "objectpath '" in result.stdout
+
+
+def package_holds_active(
+    runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+) -> bool:
+    try:
+        result = runner(
+            ["apt-mark", "showhold"], text=True, capture_output=True, check=False
+        )
+    except (FileNotFoundError, OSError):
+        return False
+    if result.returncode != 0:
+        return False
+    return MANAGED_PACKAGES.issubset(result.stdout.splitlines())
+
+
+def pin_file_current(
+    path: Path = PIN_FILE,
+    expected_uid: int = 0,
+    expected_gid: int = 0,
+) -> bool:
+    try:
+        metadata = path.lstat()
+        content = path.read_text(encoding="utf-8")
+    except (FileNotFoundError, PermissionError, OSError, UnicodeError):
+        return False
+    if not stat.S_ISREG(metadata.st_mode):
+        return False
+    if metadata.st_uid != expected_uid or metadata.st_gid != expected_gid:
+        return False
+    if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        return False
+
+    pinned: dict[str, str] = {}
+    priorities: dict[str, str] = {}
+    package = ""
+    for line in content.splitlines():
+        if line.startswith("Package: "):
+            package = line.removeprefix("Package: ").strip()
+        elif package and line.startswith("Pin: version "):
+            pinned[package] = line.removeprefix("Pin: version ").strip()
+        elif package and line.startswith("Pin-Priority: "):
+            priorities[package] = line.removeprefix("Pin-Priority: ").strip()
+    return pinned == EXPECTED_TOD_VERSIONS and priorities == {
+        package: "1001" for package in EXPECTED_TOD_VERSIONS
+    }
 
 
 def collect_state() -> SystemState:
@@ -158,9 +217,10 @@ def collect_state() -> SystemState:
         tod_installed="libfprint-2-tod1" in versions,
         fprintd_installed="fprintd" in versions,
         service_active=service_active(),
-        device_available=device_available(current_user()),
+        device_available=device_available(),
         package_versions=versions,
         runtime_paths_secure=runtime_paths_secure(),
+        apt_protected=package_holds_active() and pin_file_current(),
     )
 
 
@@ -178,6 +238,8 @@ def state_summary(state: SystemState) -> str:
         return "Fingerprint package versions are incompatible; repair the driver"
     if not state.runtime_paths_secure:
         return "Fingerprint driver permissions are unsafe; repair the driver"
+    if not state.apt_protected:
+        return "Fingerprint package upgrade protection is missing; repair the driver"
     if not state.device_available:
         return "Fingerprint packages are installed, but fprintd cannot expose the reader"
     return "Fingerprint stack needs attention"

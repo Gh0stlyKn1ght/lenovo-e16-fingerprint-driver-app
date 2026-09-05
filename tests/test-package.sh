@@ -10,6 +10,7 @@ package="$output_dir/lenovo-e16-fingerprint-driver-app_0.1.0~test1_amd64.deb"
 [ "$(dpkg-deb -f "$package" Package)" = lenovo-e16-fingerprint-driver-app ]
 [ "$(dpkg-deb -f "$package" Architecture)" = amd64 ]
 dpkg-deb -f "$package" Depends | grep -qw pkexec
+dpkg-deb -f "$package" Depends | grep -qw libglib2.0-bin
 if dpkg-deb -f "$package" Depends | grep -qw policykit-1; then
   printf 'Ubuntu-only policykit-1 dependency found in Kali package.\n' >&2
   exit 1

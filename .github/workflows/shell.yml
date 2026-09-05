@@ -10,10 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck python3-bandit
       - name: Syntax and policy tests
         run: ./tests/test-static.sh
       - name: Build and inspect Debian package
         run: ./tests/test-package.sh
+      - name: Exercise recovery safeguards
+        run: ./tests/test-recovery.sh
       - name: ShellCheck
         run: shellcheck --external-sources ./*.sh lib/*.sh tests/*.sh
+      - name: Python security scan
+        run: bandit -q -lll -r goodix_550a_gui.py lib

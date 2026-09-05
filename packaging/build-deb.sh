@@ -52,7 +52,7 @@ Section: utils
 Priority: optional
 Architecture: amd64
 Maintainer: Gh0stlyKn1ght <26194374+Gh0stlyKn1ght@users.noreply.github.com>
-Depends: python3, python3-gi, gir1.2-gtk-3.0, pkexec, fprintd, curl, unzip, binutils
+Depends: python3, python3-gi, gir1.2-gtk-3.0, libglib2.0-bin, pkexec, fprintd, curl, unzip, binutils
 Homepage: https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app
 Description: Kali setup utility for the Goodix 27c6:550a reader
  Installs a root-owned GTK utility and verified installer helpers. The

@@ -47,6 +47,7 @@ This installer instead:
 - asks APT to simulate the complete transaction first;
 - records package state and provides rollback;
 - pins the TOD stack against accidental partial upgrades;
+- preserves the exact pin and reapplies holds if installation is interrupted;
 - verifies that fprintd sees the device;
 - disables runtime autosuspend for `27c6:550a` to prevent mid-enrollment stalls;
 - never enables fingerprint PAM automatically;
@@ -98,7 +99,7 @@ authentication as a convenience factor rather than the only credential. Read
 
 ## Desktop setup utility
 
-The native GTK utility shows live reader and driver status and provides guided
+The native GTK utility shows live reader, driver, and APT-protection status and provides guided
 actions for installation, enrollment, verification, resetting enrolled prints,
 diagnostics, and restoring Kali packages.
 
@@ -231,8 +232,9 @@ Run the local test suite:
 ./tests/test-package.sh
 ```
 
-CI performs shell syntax and policy tests, Python backend unit tests, Python
-compilation, and ShellCheck. The installer also has its own real-system
+CI performs shell syntax and policy tests, recovery-safeguard tests, Python
+backend unit tests, Python compilation, Bandit scanning, and ShellCheck. A
+weekly job verifies upstream hashes and reports stale TOD artifacts. The installer also has its own real-system
 `--dry-run` transaction check.
 
 ## Building the application package

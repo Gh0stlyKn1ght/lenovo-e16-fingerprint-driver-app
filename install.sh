@@ -24,7 +24,7 @@ done
 if [ "$DRY_RUN" -ne 1 ]; then
   require_root
 fi
-for command in apt-get apt-mark curl dpkg dpkg-deb sha256sum unzip readelf; do require_command "$command"; done
+for command in apt-get apt-mark curl dpkg dpkg-deb gdbus sha256sum unzip readelf; do require_command "$command"; done
 [ "$(dpkg --print-architecture)" = amd64 ] || die 'The Lenovo driver is amd64-only.'
 is_supported_os || die 'Only Kali Linux is supported by this installer.'
 usb_device_present || die "Fingerprint reader $TARGET_USB_ID was not detected."
@@ -39,7 +39,8 @@ if [ "$ASSUME_YES" -ne 1 ]; then
 fi
 
 workdir=$(mktemp -d /tmp/goodix-550a-install.XXXXXX)
-trap 'rm -rf "$workdir"' EXIT INT TERM
+cleanup() { rm -rf -- "$workdir"; }
+trap cleanup EXIT
 mkdir -p "$workdir/downloads" "$workdir/repack"
 
 info 'Downloading verified upstream artifacts.'
@@ -112,11 +113,24 @@ if [ ! -f "$STATE_DIR/holds-before.txt" ]; then
   apt-mark showhold | grep -E '^(libfprint-2-2|libfprint-2-tod1|libfprint-2-tod1-goodix)$' > "$STATE_DIR/holds-before.txt" || true
 fi
 
-rollback_on_error() {
-  warn "Installation failed. Run $ROOT/uninstall.sh to restore the distribution packages."
+installation_failed() {
+  local status=$1
+  trap - ERR INT TERM HUP
+  warn 'Installation did not complete; preserving the exact APT pin and safety holds.'
+  hold_installed_managed_packages
+  warn "Run $ROOT/uninstall.sh to restore the distribution packages."
+  exit "$status"
 }
-trap 'rollback_on_error' ERR
-apt-get install -y --reinstall --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd
+
+# Persist the desired pin before APT changes the authentication stack. This
+# protects a partially installed version even after SIGKILL or power loss.
+trap 'installation_failed $?' ERR
+trap 'installation_failed 130' INT
+trap 'installation_failed 143' TERM HUP
+write_pin_file "$LIBFPRINT_VERSION" "$TOD_VERSION" "$LENOVO_VERSION"
+apt-get install -y --reinstall --allow-downgrades --allow-change-held-packages \
+  "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" \
+  fprintd libpam-fprintd
 
 # dpkg does not always replace ownership on pre-existing shared directories.
 # Secure every path from which root-run fprintd loads the proprietary module.
@@ -131,20 +145,6 @@ for path in "$driver_root" "$driver_dir" "$driver_file" "$driver_rule"; do
   chmod go-w "$path"
 done
 
-cat > "$PIN_FILE" <<EOF
-Package: libfprint-2-2
-Pin: version $LIBFPRINT_VERSION
-Pin-Priority: 1001
-
-Package: libfprint-2-tod1
-Pin: version $TOD_VERSION
-Pin-Priority: 1001
-
-Package: libfprint-2-tod1-goodix
-Pin: version $LENOVO_VERSION
-Pin-Priority: 1001
-EOF
-chmod 0644 "$PIN_FILE"
 apt-mark hold libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix >/dev/null
 
 udevadm control --reload-rules
@@ -152,11 +152,11 @@ udevadm trigger --subsystem-match=usb --attr-match=idVendor=27c6 --attr-match=id
 "$ROOT/repair-power.sh"
 systemctl restart fprintd.service
 
-if ! timeout 15 fprintd-list "$target_user" > "$STATE_DIR/device-test.log" 2>&1; then
-  cat "$STATE_DIR/device-test.log" >&2
+if ! fprint_device_available > "$STATE_DIR/device-test.log" 2>&1; then
   die 'Driver installed, but fprintd did not expose the reader. PAM was not changed.'
 fi
 chmod 0600 "$STATE_DIR"/*.log "$STATE_DIR"/*.tsv 2>/dev/null || true
+trap - ERR INT TERM HUP
 
 info 'Reader detected by fprintd. PAM has not been modified.'
 info "Enroll with: fprintd-enroll -f right-index-finger $target_user"

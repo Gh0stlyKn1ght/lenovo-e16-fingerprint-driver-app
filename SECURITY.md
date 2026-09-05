@@ -5,6 +5,9 @@ stack. The Goodix module cannot be audited by this project. It is downloaded
 from Lenovo over HTTPS and accepted only when its SHA-256 matches the reviewed
 manifest.
 
+The complete public trust, modification, privacy, recovery, and licensing
+disclosure is maintained in [docs/FULL-DISCLOSURE.md](docs/FULL-DISCLOSURE.md).
+
 Do not report biometric data, enrolled templates, passwords, or full system
 logs in public issues. Report installer vulnerabilities privately to the
 maintainers once a repository security contact is configured.
@@ -16,7 +19,7 @@ password and recovery path. The installer never enables PAM automatically.
 
 - Enrollment and verification are performed locally by `fprintd` and the
   Goodix TOD module. This project contains no upload or telemetry feature.
-- User templates are stored below `/var/lib/fprint/<user>/`. The systemd unit
+- User templates are stored below `/var/lib/fprint/`. The systemd unit
   creates `/var/lib/fprint` as root-owned mode `0700`, preventing ordinary
   users from traversing or reading the template path.
 - The `fprintd` systemd sandbox restricts address families to local IPC and

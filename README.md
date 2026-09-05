@@ -1,6 +1,8 @@
 # Lenovo E16 Fingerprint Driver App
 
 [![Shell tests](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/shell.yml/badge.svg)](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/shell.yml)
+[![CodeQL](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gh0stlyKn1ght/lenovo-e16-fingerprint-driver-app/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A safety-oriented Kali Linux installer for the Goodix MOH fingerprint reader
 `27c6:550a`. This project makes Lenovo's proprietary Ubuntu TOD driver usable
@@ -9,6 +11,12 @@ a native GTK setup and recovery application.
 
 Created for and initially validated on Kali Linux by
 [@Gh0stlyKn1ght](https://github.com/Gh0stlyKn1ght).
+
+> [!IMPORTANT]
+> This unofficial project loads a proprietary, unauditable Goodix binary into
+> the privileged fingerprint service and installs pinned foreign packages.
+> Read the [full disclosure](docs/FULL-DISCLOSURE.md), [security model](SECURITY.md),
+> and [third-party notices](THIRD_PARTY_NOTICES.md) before installation.
 
 ![Goodix Fingerprint Setup showing a detected reader and ready driver](assets/app-ready.png)
 
@@ -269,10 +277,12 @@ and Canonical at installation time.
 
 ## Licensing
 
-The installer code is MIT licensed. Goodix's module is proprietary and is not
-part of this repository. Lenovo's official archive is fetched at install time.
-Canonical's TOD-enabled libfprint packages remain under their respective
-licenses. See `SECURITY.md` before using fingerprint authentication.
+Original project code and documentation are MIT licensed; see [LICENSE](LICENSE).
+Goodix's proprietary module and Canonical's TOD-enabled packages are downloaded
+at installation time, are not redistributed or relicensed by this project, and
+remain subject to their respective terms. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the
+[full disclosure](docs/FULL-DISCLOSURE.md).
 
 ## Upstream references
 

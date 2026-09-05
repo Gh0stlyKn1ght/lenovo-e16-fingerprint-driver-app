@@ -7,10 +7,12 @@ on:
   schedule:
     - cron: "31 8 * * 2"
 permissions:
+  actions: read
   contents: read
   security-events: write
 jobs:
   analyze:
+    if: github.event.repository.visibility == 'public'
     name: analyze-python
     runs-on: ubuntu-24.04
     steps:

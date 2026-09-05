@@ -79,7 +79,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
         action_frame.add(action_grid)
         outer.pack_start(action_frame, False, False, 0)
 
-        self.install_button = self._button("Install driver", "system-software-install")
+        self.install_button = self._button("Install / repair driver", "system-software-install")
         self.install_button.connect("clicked", self.on_install)
         self.rollback_button = self._button("Restore Kali packages", "edit-undo")
         self.rollback_button.connect("clicked", self.on_rollback)
@@ -193,8 +193,7 @@ class GoodixWindow(Gtk.ApplicationWindow):
         state = getattr(self, "state", None)
         ready = bool(state and state.ready)
         present = bool(state and state.reader_present)
-        installed = bool(state and state.driver_installed)
-        self.install_button.set_sensitive(not self.busy and present and not installed)
+        self.install_button.set_sensitive(not self.busy and present)
         self.rollback_button.set_sensitive(not self.busy and installed)
         self.enroll_button.set_sensitive(not self.busy and ready)
         self.verify_button.set_sensitive(not self.busy and ready)
@@ -276,8 +275,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
 
     def on_install(self, *_args) -> None:
         if not self.confirm(
-            "Install the Goodix driver?",
-            "Verified Lenovo and Canonical packages will be installed. "
+            "Install or repair the Goodix driver?",
+            "Verified Lenovo and Canonical packages will be installed or reinstalled. "
             "The operation requires administrator authorization and will not enable PAM.",
         ):
             return

@@ -12,6 +12,7 @@ permissions:
   security-events: write
 jobs:
   analyze:
+    if: github.event.repository.visibility == 'public'
     name: analyze-python
     runs-on: ubuntu-24.04
     steps:

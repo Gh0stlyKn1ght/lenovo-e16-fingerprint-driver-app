@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck source=lib/common.sh
@@ -22,7 +23,7 @@ done
 if [ "$DRY_RUN" -ne 1 ]; then
   require_root
 fi
-for command in apt-get curl dpkg dpkg-deb sha256sum unzip readelf; do require_command "$command"; done
+for command in apt-get apt-mark curl dpkg dpkg-deb sha256sum unzip readelf; do require_command "$command"; done
 [ "$(dpkg --print-architecture)" = amd64 ] || die 'The Lenovo driver is amd64-only.'
 is_supported_os || die 'Only Kali Linux is supported by this installer.'
 usb_device_present || die "Fingerprint reader $TARGET_USB_ID was not detected."
@@ -57,6 +58,13 @@ driver_deb=$(find "$workdir/lenovo" -type f -name '*.deb' -print -quit)
 [ "$(dpkg-deb -f "$driver_deb" Package)" = libfprint-2-tod1-goodix ] || die 'Unexpected Lenovo package name.'
 [ "$(dpkg-deb -f "$driver_deb" Version)" = "$LENOVO_VERSION" ] || die 'Unexpected Lenovo driver version.'
 
+# The Lenovo archive has historically carried desktop-user ownership and
+# group-writable modes.  Never install a root-loaded module with those modes.
+dpkg-deb -R "$driver_deb" "$workdir/repack/driver"
+find "$workdir/repack/driver" \( -type f -o -type d \) -exec chmod go-w {} +
+dpkg-deb --build --root-owner-group "$workdir/repack/driver" "$workdir/driver-kali.deb" >/dev/null
+driver_deb="$workdir/driver-kali.deb"
+
 # Kali renamed libgusb2 to libgusb2a during the 64-bit time_t transition. Both
 # expose libgusb.so.2; rewrite only the dependency metadata after confirming ABI.
 dpkg-deb -R "$workdir/downloads/tod.deb" "$workdir/repack/tod"
@@ -84,10 +92,13 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
-install -d -m 0700 "$STATE_DIR/packages"
+install -d -o root -g root -m 0700 "$STATE_DIR" "$STATE_DIR/packages"
+chmod 0700 "$STATE_DIR"
 dpkg-query -W -f='${binary:Package}\t${Version}\n' > "$STATE_DIR/packages-before.tsv"
 cp "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" "$STATE_DIR/packages/"
-if [ -e "$PIN_FILE" ]; then cp -a "$PIN_FILE" "$STATE_DIR/preferences.backup"; fi
+[ -e "$PIN_FILE" ] && cp -a "$PIN_FILE" "$STATE_DIR/preferences.backup" || true
+if [ -e "$PIN_FILE" ]; then chmod 0600 "$STATE_DIR/preferences.backup"; fi
+apt-mark showhold | grep -E '^(libfprint-2-2|libfprint-2-tod1|libfprint-2-tod1-goodix)$' > "$STATE_DIR/holds-before.txt" || true
 
 rollback_on_error() {
   warn "Installation failed. Run $ROOT/uninstall.sh to restore the distribution packages."
@@ -96,10 +107,20 @@ trap 'rollback_on_error' ERR
 apt-get install -y --allow-downgrades "$workdir/tod-kali.deb" "$workdir/libfprint-kali.deb" "$driver_deb" fprintd libpam-fprintd
 
 cat > "$PIN_FILE" <<EOF
-Package: libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix
-Pin: version *tod*
+Package: libfprint-2-2
+Pin: version $LIBFPRINT_VERSION
+Pin-Priority: 1001
+
+Package: libfprint-2-tod1
+Pin: version $TOD_VERSION
+Pin-Priority: 1001
+
+Package: libfprint-2-tod1-goodix
+Pin: version $LENOVO_VERSION
 Pin-Priority: 1001
 EOF
+chmod 0644 "$PIN_FILE"
+apt-mark hold libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix >/dev/null
 
 udevadm control --reload-rules
 udevadm trigger --subsystem-match=usb --attr-match=idVendor=27c6 --attr-match=idProduct=550a || true
@@ -110,6 +131,7 @@ if ! timeout 15 fprintd-list "${SUDO_USER:-root}" > "$STATE_DIR/device-test.log"
   cat "$STATE_DIR/device-test.log" >&2
   die 'Driver installed, but fprintd did not expose the reader. PAM was not changed.'
 fi
+chmod 0600 "$STATE_DIR"/*.log "$STATE_DIR"/*.tsv 2>/dev/null || true
 
 info 'Reader detected by fprintd. PAM has not been modified.'
 info "Enroll with: fprintd-enroll -f right-index-finger ${SUDO_USER:-$USER}"

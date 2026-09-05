@@ -6,6 +6,7 @@ PROJECT_NAME="goodix-550a-kali"
 STATE_DIR="${GOODIX_STATE_DIR:-/var/lib/${PROJECT_NAME}}"
 # shellcheck disable=SC2034
 PIN_FILE="${GOODIX_PIN_FILE:-/etc/apt/preferences.d/${PROJECT_NAME}}"
+FPRINT_DATA_DIR="${GOODIX_FPRINT_DATA_DIR:-/var/lib/fprint}"
 TARGET_USB_ID="27c6:550a"
 MANAGED_PACKAGES=(libfprint-2-2 libfprint-2-tod1 libfprint-2-tod1-goodix)
 
@@ -102,6 +103,13 @@ fprint_device_available() {
     --method net.reactivated.Fprint.Manager.GetDevices 2>/dev/null) || return 1
   grep -q "objectpath '" <<< "$output" || return 1
   printf '%s\n' "$output"
+}
+
+clear_fingerprint_data() {
+  [ ! -L "$FPRINT_DATA_DIR" ] \
+    || die "Fingerprint data path must not be a symbolic link: $FPRINT_DATA_DIR"
+  [ -d "$FPRINT_DATA_DIR" ] || return 0
+  find "$FPRINT_DATA_DIR" -xdev -mindepth 1 -delete
 }
 
 installed_version() {

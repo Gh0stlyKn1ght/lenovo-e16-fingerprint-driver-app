@@ -290,7 +290,8 @@ class GoodixWindow(Gtk.ApplicationWindow):
     def on_rollback(self, *_args) -> None:
         if not self.confirm(
             "Restore Kali fingerprint packages?",
-            "The proprietary driver and TOD stack will be removed. Enrolled prints are retained.",
+            "The proprietary driver, TOD stack, and all enrolled fingerprint "
+            "templates will be removed. This cannot be undone.",
             destructive=True,
         ):
             return

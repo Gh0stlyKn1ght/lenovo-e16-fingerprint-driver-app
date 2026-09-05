@@ -6,6 +6,7 @@ ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 # shellcheck source=lib/common.sh
 . "$ROOT/lib/common.sh"
 load_manifest "$ROOT"
+target_user=$(invoking_user)
 
 ASSUME_YES=0
 DRY_RUN=0
@@ -151,12 +152,12 @@ udevadm trigger --subsystem-match=usb --attr-match=idVendor=27c6 --attr-match=id
 "$ROOT/repair-power.sh"
 systemctl restart fprintd.service
 
-if ! timeout 15 fprintd-list "${SUDO_USER:-root}" > "$STATE_DIR/device-test.log" 2>&1; then
+if ! timeout 15 fprintd-list "$target_user" > "$STATE_DIR/device-test.log" 2>&1; then
   cat "$STATE_DIR/device-test.log" >&2
   die 'Driver installed, but fprintd did not expose the reader. PAM was not changed.'
 fi
 chmod 0600 "$STATE_DIR"/*.log "$STATE_DIR"/*.tsv 2>/dev/null || true
 
 info 'Reader detected by fprintd. PAM has not been modified.'
-info "Enroll with: fprintd-enroll -f right-index-finger ${SUDO_USER:-$USER}"
+info "Enroll with: fprintd-enroll -f right-index-finger $target_user"
 info 'After successful enrollment and verification, enable PAM explicitly with pam-auth-update.'

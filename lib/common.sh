@@ -20,6 +20,21 @@ require_root() {
   [ "$(id -u)" -eq 0 ] || die "Run this command as root (for example: sudo $0)."
 }
 
+invoking_user() {
+  local caller_uid caller_user
+  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+    printf '%s' "$SUDO_USER"
+    return 0
+  fi
+
+  caller_uid=${PKEXEC_UID:-}
+  case "$caller_uid" in
+    ''|*[!0-9]*) printf '%s' root; return 0 ;;
+  esac
+  caller_user=$(getent passwd "$caller_uid" | cut -d: -f1)
+  printf '%s' "${caller_user:-root}"
+}
+
 load_manifest() {
   local root=$1
   # shellcheck disable=SC1091
